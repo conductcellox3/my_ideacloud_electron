@@ -26,6 +26,8 @@ export default function DiagramCanvas() {
   const [editingId, setEditingId] = useState<string | null>(null)
   const [connectFrom, setConnectFrom] = useState<{id:string, style:'solid'|'dashed'}|null>(null)
   const [dragging, setDragging] = useState<{id:string, offsetX:number, offsetY:number}|null>(null)
+  const [resizing, setResizing] = useState<{id:string, startX:number, startY:number, startW:number, startH:number}|null>(null)
+  const [selectedId, setSelectedId] = useState<string | null>(null)
   const containerRef = useRef<HTMLDivElement>(null)
 
   const addShape = (
@@ -81,26 +83,48 @@ export default function DiagramCanvas() {
     if (e.button !== 0) return
     if (editingId === shape.id || connectFrom) return
     e.preventDefault()
+    setSelectedId(shape.id)
     setDragging({ id: shape.id, offsetX: e.clientX - shape.x, offsetY: e.clientY - shape.y })
   }
 
+  const handleResizeMouseDown = (e: React.MouseEvent, shape: Shape) => {
+    e.stopPropagation()
+    e.preventDefault()
+    setSelectedId(shape.id)
+    setResizing({
+      id: shape.id,
+      startX: e.clientX,
+      startY: e.clientY,
+      startW: shape.width,
+      startH: shape.height
+    })
+  }
+
   const handleMouseMove = (e: React.MouseEvent) => {
-    if (dragging) {
+    if (resizing) {
+      e.preventDefault()
+      const dx = e.clientX - resizing.startX
+      const dy = e.clientY - resizing.startY
+      updateShape(resizing.id, {
+        width: Math.max(20, resizing.startW + dx),
+        height: Math.max(20, resizing.startH + dy)
+      })
+    } else if (dragging) {
       e.preventDefault()
       updateShape(dragging.id, { x: e.clientX - dragging.offsetX, y: e.clientY - dragging.offsetY })
     }
   }
 
   const handleMouseUp = () => {
-    if (dragging) {
-      setDragging(null)
-    }
+    if (dragging) setDragging(null)
+    if (resizing) setResizing(null)
   }
 
   const handleCanvasClick = () => {
     setCanvasMenu(null)
     setShapeMenu(null)
     setConnectFrom(null)
+    setSelectedId(null)
   }
 
   return (
@@ -160,12 +184,16 @@ export default function DiagramCanvas() {
         if (shape.type === 'parallelogram')
           baseStyle.clipPath = 'polygon(10% 0%, 100% 0%, 90% 100%, 0% 100%)'
 
+        if (selectedId === shape.id) {
+          baseStyle.boxShadow = '0 0 0 2px #3b82f6'
+        }
+
         return (
           <div
             key={shape.id}
             onContextMenu={e => handleShapeContextMenu(e, shape.id)}
             onDoubleClick={() => setEditingId(shape.id)}
-            onClick={() => connectFrom && finishConnect(shape.id)}
+            onClick={() => { if (connectFrom) finishConnect(shape.id); setSelectedId(shape.id) }}
             onMouseDown={e => handleShapeMouseDown(e, shape)}
             style={baseStyle}
           >
@@ -177,6 +205,20 @@ export default function DiagramCanvas() {
           >
             {shape.text}
           </div>
+          {selectedId === shape.id && (
+            <div
+              onMouseDown={e => handleResizeMouseDown(e, shape)}
+              style={{
+                position: 'absolute',
+                width: 8,
+                height: 8,
+                right: -4,
+                bottom: -4,
+                background: '#3b82f6',
+                cursor: 'nwse-resize'
+              }}
+            />
+          )}
           </div>
         )
       })}
