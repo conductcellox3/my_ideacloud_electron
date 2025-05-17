@@ -195,9 +195,12 @@ export default function DiagramCanvas() {
         >
           <div className="p-1 hover:bg-neutral-200 cursor-pointer" onClick={() => { updateShape(shapeMenu.id, {width: shapes.find(s=>s.id===shapeMenu.id)?.width! * 1.2, height: shapes.find(s=>s.id===shapeMenu.id)?.height! * 1.2}); setShapeMenu(null) }}>Increase Size</div>
           <div className="p-1 hover:bg-neutral-200 cursor-pointer" onClick={() => { updateShape(shapeMenu.id, {width: shapes.find(s=>s.id===shapeMenu.id)?.width! * 0.8, height: shapes.find(s=>s.id===shapeMenu.id)?.height! * 0.8}); setShapeMenu(null) }}>Decrease Size</div>
-          <div className="p-1 hover:bg-neutral-200 cursor-pointer" onClick={() => { updateShape(shapeMenu.id, {color: '#f87171'}); setShapeMenu(null) }}>Red</div>
-          <div className="p-1 hover:bg-neutral-200 cursor-pointer" onClick={() => { updateShape(shapeMenu.id, {color: '#60a5fa'}); setShapeMenu(null) }}>Blue</div>
-          <div className="p-1 hover:bg-neutral-200 cursor-pointer" onClick={() => { updateShape(shapeMenu.id, {color: '#4ade80'}); setShapeMenu(null) }}>Green</div>
+          <div className="p-1 hover:bg-neutral-200 cursor-pointer" onClick={() => { updateShape(shapeMenu.id, {color: '#ffffff'}); setShapeMenu(null) }}>White</div>
+          <div className="p-1 hover:bg-neutral-200 cursor-pointer" onClick={() => { updateShape(shapeMenu.id, {color: '#fef9c3'}); setShapeMenu(null) }}>Yellow</div>
+          <div className="p-1 hover:bg-neutral-200 cursor-pointer" onClick={() => { updateShape(shapeMenu.id, {color: '#dbeafe'}); setShapeMenu(null) }}>Blue</div>
+          <div className="p-1 hover:bg-neutral-200 cursor-pointer" onClick={() => { updateShape(shapeMenu.id, {color: '#dcfce7'}); setShapeMenu(null) }}>Green</div>
+          <div className="p-1 hover:bg-neutral-200 cursor-pointer" onClick={() => { updateShape(shapeMenu.id, {color: '#fee2e2'}); setShapeMenu(null) }}>Red</div>
+          <div className="p-1 hover:bg-neutral-200 cursor-pointer" onClick={() => { updateShape(shapeMenu.id, {color: '#f3e8ff'}); setShapeMenu(null) }}>Purple</div>
           <div className="p-1 hover:bg-neutral-200 cursor-pointer" onClick={() => startConnect(shapeMenu.id, 'solid')}>Connect Solid</div>
           <div className="p-1 hover:bg-neutral-200 cursor-pointer" onClick={() => startConnect(shapeMenu.id, 'dashed')}>Connect Dashed</div>
         </div>
