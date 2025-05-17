@@ -1,8 +1,8 @@
-import { useState, useRef } from 'react'
+import React, { useState, useRef } from 'react'
 
 interface Shape {
   id: string
-  type: 'rect' | 'sticky'
+  type: 'rect' | 'sticky' | 'ellipse' | 'diamond' | 'parallelogram'
   x: number
   y: number
   width: number
@@ -28,7 +28,11 @@ export default function DiagramCanvas() {
   const [dragging, setDragging] = useState<{id:string, offsetX:number, offsetY:number}|null>(null)
   const containerRef = useRef<HTMLDivElement>(null)
 
-  const addShape = (type:'rect'|'sticky', x:number, y:number) => {
+  const addShape = (
+    type: 'rect' | 'sticky' | 'ellipse' | 'diamond' | 'parallelogram',
+    x: number,
+    y: number
+  ) => {
     const id = crypto.randomUUID()
     const newShape: Shape = {
       id,
@@ -129,27 +133,36 @@ export default function DiagramCanvas() {
           )
         })}
       </svg>
-      {shapes.map(shape => (
-        <div
-          key={shape.id}
-          onContextMenu={e => handleShapeContextMenu(e, shape.id)}
-          onDoubleClick={() => setEditingId(shape.id)}
-          onClick={() => connectFrom && finishConnect(shape.id)}
-          onMouseDown={e => handleShapeMouseDown(e, shape)}
-          style={{
-            position: 'absolute',
-            left: shape.x,
-            top: shape.y,
-            width: shape.width,
-            height: shape.height,
-            background: shape.color,
-            border: '1px solid #000',
-            padding: 4,
-            boxSizing: 'border-box',
-            overflow: 'hidden',
-            cursor: 'move'
-          }}
-        >
+      {shapes.map(shape => {
+        const baseStyle: React.CSSProperties = {
+          position: 'absolute',
+          left: shape.x,
+          top: shape.y,
+          width: shape.width,
+          height: shape.height,
+          background: shape.color,
+          border: '1px solid #000',
+          padding: 4,
+          boxSizing: 'border-box',
+          overflow: 'hidden',
+          cursor: 'move'
+        }
+
+        if (shape.type === 'ellipse') baseStyle.borderRadius = '50%'
+        if (shape.type === 'diamond')
+          baseStyle.clipPath = 'polygon(50% 0%, 100% 50%, 50% 100%, 0% 50%)'
+        if (shape.type === 'parallelogram')
+          baseStyle.clipPath = 'polygon(10% 0%, 100% 0%, 90% 100%, 0% 100%)'
+
+        return (
+          <div
+            key={shape.id}
+            onContextMenu={e => handleShapeContextMenu(e, shape.id)}
+            onDoubleClick={() => setEditingId(shape.id)}
+            onClick={() => connectFrom && finishConnect(shape.id)}
+            onMouseDown={e => handleShapeMouseDown(e, shape)}
+            style={baseStyle}
+          >
           <div
             contentEditable={editingId === shape.id}
             suppressContentEditableWarning
@@ -158,8 +171,9 @@ export default function DiagramCanvas() {
           >
             {shape.text}
           </div>
-        </div>
-      ))}
+          </div>
+        )
+      })}
 
       {canvasMenu && (
         <div
@@ -167,6 +181,9 @@ export default function DiagramCanvas() {
           style={{left: canvasMenu.x, top: canvasMenu.y}}
         >
           <div className="p-1 hover:bg-neutral-200 cursor-pointer" onClick={() => { addShape('rect', canvasMenu.x, canvasMenu.y); setCanvasMenu(null) }}>Add Rectangle</div>
+          <div className="p-1 hover:bg-neutral-200 cursor-pointer" onClick={() => { addShape('ellipse', canvasMenu.x, canvasMenu.y); setCanvasMenu(null) }}>Add Ellipse</div>
+          <div className="p-1 hover:bg-neutral-200 cursor-pointer" onClick={() => { addShape('diamond', canvasMenu.x, canvasMenu.y); setCanvasMenu(null) }}>Add Diamond</div>
+          <div className="p-1 hover:bg-neutral-200 cursor-pointer" onClick={() => { addShape('parallelogram', canvasMenu.x, canvasMenu.y); setCanvasMenu(null) }}>Add Parallelogram</div>
           <div className="p-1 hover:bg-neutral-200 cursor-pointer" onClick={() => { addShape('sticky', canvasMenu.x, canvasMenu.y); setCanvasMenu(null) }}>Add Sticky</div>
         </div>
       )}
