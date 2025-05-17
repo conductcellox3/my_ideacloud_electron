@@ -59,6 +59,7 @@ export default function DiagramCanvas() {
 
   const handleShapeContextMenu = (e: React.MouseEvent, id:string) => {
     e.preventDefault()
+    e.stopPropagation()
     setCanvasMenu(null)
     setShapeMenu({x: e.clientX, y: e.clientY, id})
   }
@@ -99,6 +100,7 @@ export default function DiagramCanvas() {
   const handleCanvasClick = () => {
     setCanvasMenu(null)
     setShapeMenu(null)
+    setConnectFrom(null)
   }
 
   return (
@@ -145,7 +147,11 @@ export default function DiagramCanvas() {
           padding: 4,
           boxSizing: 'border-box',
           overflow: 'hidden',
-          cursor: 'move'
+          cursor: 'move',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          textAlign: 'center'
         }
 
         if (shape.type === 'ellipse') baseStyle.borderRadius = '50%'
