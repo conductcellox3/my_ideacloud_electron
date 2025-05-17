@@ -25,6 +25,7 @@ export default function DiagramCanvas() {
   const [shapeMenu, setShapeMenu] = useState<{x:number, y:number, id:string}|null>(null)
   const [editingId, setEditingId] = useState<string | null>(null)
   const [connectFrom, setConnectFrom] = useState<{id:string, style:'solid'|'dashed'}|null>(null)
+  const [dragging, setDragging] = useState<{id:string, offsetX:number, offsetY:number}|null>(null)
   const containerRef = useRef<HTMLDivElement>(null)
 
   const addShape = (type:'rect'|'sticky', x:number, y:number) => {
@@ -71,6 +72,26 @@ export default function DiagramCanvas() {
     setConnectFrom(null)
   }
 
+  const handleShapeMouseDown = (e: React.MouseEvent, shape: Shape) => {
+    if (e.button !== 0) return
+    if (editingId === shape.id || connectFrom) return
+    e.preventDefault()
+    setDragging({ id: shape.id, offsetX: e.clientX - shape.x, offsetY: e.clientY - shape.y })
+  }
+
+  const handleMouseMove = (e: React.MouseEvent) => {
+    if (dragging) {
+      e.preventDefault()
+      updateShape(dragging.id, { x: e.clientX - dragging.offsetX, y: e.clientY - dragging.offsetY })
+    }
+  }
+
+  const handleMouseUp = () => {
+    if (dragging) {
+      setDragging(null)
+    }
+  }
+
   const handleCanvasClick = () => {
     setCanvasMenu(null)
     setShapeMenu(null)
@@ -81,6 +102,8 @@ export default function DiagramCanvas() {
       ref={containerRef}
       onContextMenu={handleCanvasContextMenu}
       onClick={handleCanvasClick}
+      onMouseMove={handleMouseMove}
+      onMouseUp={handleMouseUp}
       className="relative w-full h-screen bg-neutral-100 select-none"
     >
       <svg className="absolute inset-0 pointer-events-none">
@@ -112,6 +135,7 @@ export default function DiagramCanvas() {
           onContextMenu={e => handleShapeContextMenu(e, shape.id)}
           onDoubleClick={() => setEditingId(shape.id)}
           onClick={() => connectFrom && finishConnect(shape.id)}
+          onMouseDown={e => handleShapeMouseDown(e, shape)}
           style={{
             position: 'absolute',
             left: shape.x,
@@ -123,7 +147,7 @@ export default function DiagramCanvas() {
             padding: 4,
             boxSizing: 'border-box',
             overflow: 'hidden',
-            cursor: 'default'
+            cursor: 'move'
           }}
         >
           <div
