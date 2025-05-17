@@ -22,7 +22,7 @@
       "output": "dist"
     },
     "files": [
-      "rendere /**",
+      "renderer/**",
       "electron /**",
       "package.json"
     ],
