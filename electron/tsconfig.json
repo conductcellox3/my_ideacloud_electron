@@ -2,7 +2,12 @@
   "extends": "../tsconfig.json",
   "compilerOptions": {
     "module": "commonjs",
+    "moduleResolution": "node",
+    "noEmit": false,
+    "types": [],
+    "typeRoots": [],
     "outDir": "../renderer"      // Next.js export と並べても OK
   },
   "include": ["./**/*.ts"]
+  ,"files": ["shims.d.ts"]
 }
