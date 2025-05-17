@@ -1,0 +1,55 @@
+{
+  "name": "my_ideacloud_electron",
+  "version": "0.1.0",
+  "private": true,
+  "scripts": {
+    "dev": "concurrently \"npm:dev:next\" \"npm:dev:electron\" \"npm:dev:ts\"",
+    "dev:next": "next dev",
+    "dev:ts": "tsc -p electron/tsconfig.json --watch",
+
+    "dev:electron": "wait-on http://localhost:3000 && electron renderer/main.js",
+    "build:next": "cd app && next build && next export -o ../renderer",
+    "build": "npm run build:next && electron-builder",
+    "postinstall": "electron-builder install-app-deps",
+    "start": "next start",
+    "lint": "next lint"
+  },
+  "build": {
+    "productName": "IdeaCloud",
+    "appID": "com.example.IdeaCloud",
+    "directories": {
+      "buildResources": "resources",
+      "output": "dist"
+    },
+    "files": [
+      "rendere /**",
+      "electron /**",
+      "package.json"
+    ],
+    "win": {
+      "target": "nsis"
+    }
+  },
+  "dependencies": {
+    "next": "15.3.2",
+    "react": "^19.0.0",
+    "react-dom": "^19.0.0"
+  },
+  "devDependencies": {
+    "@eslint/eslintrc": "^3",
+    "@tailwindcss/postcss": "^4",
+    "@types/node": "^20",
+    "@types/react": "^19",
+    "@types/react-dom": "^19",
+    "concurrently": "^9.1.2",
+    "cross-env": "^7.0.3",
+    "electron": "^36.2.1",
+    "electron-builder": "^26.0.12",
+    "eslint": "^9",
+    "eslint-config-next": "15.3.2",
+    "tailwindcss": "^4",
+    "typescript": "^5.8.3",
+    "wait-on": "^8.0.3"
+  },
+  "main": "renderer/main.js"
+}

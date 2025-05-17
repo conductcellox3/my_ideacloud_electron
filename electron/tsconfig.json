@@ -1,0 +1,8 @@
+{
+  "extends": "../tsconfig.json",
+  "compilerOptions": {
+    "module": "commonjs",
+    "outDir": "../renderer"      // Next.js export と並べても OK
+  },
+  "include": ["./**/*.ts"]
+}
