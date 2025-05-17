@@ -8,7 +8,7 @@
     "dev:ts": "tsc -p electron/tsconfig.json --watch",
 
     "dev:electron": "wait-on http://localhost:3000 && electron renderer/main.js",
-    "build:next": "cd app && next build && next export -o ../renderer",
+    "build:next": "next build && next export -o renderer",
     "build": "npm run build:next && electron-builder",
     "postinstall": "electron-builder install-app-deps",
     "start": "next start",
