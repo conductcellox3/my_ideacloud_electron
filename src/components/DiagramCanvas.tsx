@@ -36,6 +36,54 @@ export default function DiagramCanvas() {
   const [month, setMonth] = useState(new Date().getMonth()+1)
   const [week, setWeek] = useState(1)
 
+  const escapeXml = (text: string) =>
+    text.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+
+  const buildXml = () => {
+    const shapeXml = shapes.map(s =>
+      `<shape id="${s.id}" type="${s.type}" x="${s.x}" y="${s.y}" width="${s.width}" height="${s.height}" color="${s.color}"><text>${escapeXml(s.text)}</text></shape>`
+    ).join('');
+    const lineXml = lines.map(l =>
+      `<line id="${l.id}" from="${l.from}" to="${l.to}" style="${l.style}" />`
+    ).join('');
+    return `<diagram><shapes>${shapeXml}</shapes><lines>${lineXml}</lines></diagram>`;
+  };
+
+  const parseXml = (xml: string) => {
+    const parser = new DOMParser();
+    const doc = parser.parseFromString(xml, 'application/xml');
+    const shapeNodes = Array.from(doc.getElementsByTagName('shape'));
+    const lineNodes = Array.from(doc.getElementsByTagName('line'));
+    const newShapes: Shape[] = shapeNodes.map(n => ({
+      id: n.getAttribute('id') || crypto.randomUUID(),
+      type: n.getAttribute('type') as Shape['type'],
+      x: parseFloat(n.getAttribute('x') || '0'),
+      y: parseFloat(n.getAttribute('y') || '0'),
+      width: parseFloat(n.getAttribute('width') || '0'),
+      height: parseFloat(n.getAttribute('height') || '0'),
+      color: n.getAttribute('color') || '#ffffff',
+      text: n.getElementsByTagName('text')[0]?.textContent || ''
+    }));
+    const newLines: Line[] = lineNodes.map(n => ({
+      id: n.getAttribute('id') || crypto.randomUUID(),
+      from: n.getAttribute('from') || '',
+      to: n.getAttribute('to') || '',
+      style: (n.getAttribute('style') as Line['style']) || 'solid'
+    }));
+    setShapes(newShapes);
+    setLines(newLines);
+  };
+
+  const saveDiagram = async () => {
+    const xml = buildXml();
+    await window.api.saveXML(xml);
+  };
+
+  const openDiagram = async () => {
+    const result = await window.api.openXML();
+    if (!result.canceled && result.data) parseXml(result.data);
+  };
+
   const getPoint = (e: React.MouseEvent) => {
     const rect = containerRef.current?.getBoundingClientRect()
     if (!rect) return { x: 0, y: 0 }
@@ -204,6 +252,8 @@ export default function DiagramCanvas() {
         <label>Month <input className="border p-1 w-14" type="number" value={month} onChange={e => setMonth(parseInt(e.target.value) || month)} /></label>
         <label>View <select className="border p-1" value={view} onChange={e => setView(e.target.value as 'year'|'month'|'week')}> <option value="year">Year</option> <option value="month">Month</option> <option value="week">Week</option> </select></label>
         {view==='week' && (<input className="border p-1 w-14" type="number" value={week} onChange={e => setWeek(parseInt(e.target.value) || week)} />)}
+        <button className="border px-2" onClick={openDiagram}>Open</button>
+        <button className="border px-2" onClick={saveDiagram}>Save</button>
       </div>
       <div
         ref={containerRef}
