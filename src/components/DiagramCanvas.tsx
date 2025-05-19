@@ -29,6 +29,61 @@ export default function DiagramCanvas() {
   const [resizing, setResizing] = useState<{id:string, startX:number, startY:number, startW:number, startH:number}|null>(null)
   const [selectedId, setSelectedId] = useState<string | null>(null)
   const containerRef = useRef<HTMLDivElement>(null)
+  const [gridSize, setGridSize] = useState(50)
+  const [scale, setScale] = useState(1)
+  const [view, setView] = useState<'year'|'month'|'week'>('year')
+  const [year, setYear] = useState(new Date().getFullYear())
+  const [month, setMonth] = useState(new Date().getMonth()+1)
+  const [week, setWeek] = useState(1)
+
+  const getPoint = (e: React.MouseEvent) => {
+    const rect = containerRef.current?.getBoundingClientRect()
+    if (!rect) return { x: 0, y: 0 }
+    return {
+      x: (e.clientX - rect.left) / scale,
+      y: (e.clientY - rect.top) / scale,
+    }
+  }
+
+  const scheduleLines = () => {
+    const width = 200
+    const items: JSX.Element[] = []
+    if (view === 'year') {
+      for (let i = 0; i < 12; i++) {
+        const x = i * width
+        items.push(
+          <div key={`l${i}`} style={{position:'absolute', left:x, top:0, bottom:0, width:1, background:'#ccc'}} />
+        )
+        items.push(
+          <div key={`t${i}`} style={{position:'absolute', left:x + 4, top:0, fontSize:12, color:'#555'}}>{i+1}月</div>
+        )
+      }
+    } else if (view === 'month') {
+      const days = new Date(year, month, 0).getDate()
+      for (let i = 0; i < days; i++) {
+        const x = i * width
+        items.push(
+          <div key={`l${i}`} style={{position:'absolute', left:x, top:0, bottom:0, width:1, background:'#ccc'}} />
+        )
+        items.push(
+          <div key={`t${i}`} style={{position:'absolute', left:x + 4, top:0, fontSize:12, color:'#555'}}>{i+1}日</div>
+        )
+      }
+    } else if (view === 'week') {
+      for (let i = 0; i < 7; i++) {
+        const x = i * width
+        const date = new Date(year, month - 1, (week - 1) * 7 + i + 1)
+        const label = `${date.getMonth()+1}/${date.getDate()}`
+        items.push(
+          <div key={`l${i}`} style={{position:'absolute', left:x, top:0, bottom:0, width:1, background:'#ccc'}} />
+        )
+        items.push(
+          <div key={`t${i}`} style={{position:'absolute', left:x + 4, top:0, fontSize:12, color:'#555'}}>{label}</div>
+        )
+      }
+    }
+    return items
+  }
 
   const addShape = (
     type: 'rect' | 'sticky' | 'ellipse' | 'diamond' | 'parallelogram',
@@ -56,14 +111,16 @@ export default function DiagramCanvas() {
   const handleCanvasContextMenu = (e: React.MouseEvent) => {
     e.preventDefault()
     setShapeMenu(null)
-    setCanvasMenu({x: e.clientX, y: e.clientY})
+    const p = getPoint(e)
+    setCanvasMenu({x: p.x, y: p.y})
   }
 
   const handleShapeContextMenu = (e: React.MouseEvent, id:string) => {
     e.preventDefault()
     e.stopPropagation()
     setCanvasMenu(null)
-    setShapeMenu({x: e.clientX, y: e.clientY, id})
+    const p = getPoint(e)
+    setShapeMenu({x: p.x, y: p.y, id})
   }
 
   const startConnect = (id:string, style:'solid'|'dashed') => {
@@ -83,18 +140,20 @@ export default function DiagramCanvas() {
     if (e.button !== 0) return
     if (editingId === shape.id || connectFrom) return
     e.preventDefault()
+    const p = getPoint(e)
     setSelectedId(shape.id)
-    setDragging({ id: shape.id, offsetX: e.clientX - shape.x, offsetY: e.clientY - shape.y })
+    setDragging({ id: shape.id, offsetX: p.x - shape.x, offsetY: p.y - shape.y })
   }
 
   const handleResizeMouseDown = (e: React.MouseEvent, shape: Shape) => {
     e.stopPropagation()
     e.preventDefault()
+    const p = getPoint(e)
     setSelectedId(shape.id)
     setResizing({
       id: shape.id,
-      startX: e.clientX,
-      startY: e.clientY,
+      startX: p.x,
+      startY: p.y,
       startW: shape.width,
       startH: shape.height
     })
@@ -103,15 +162,17 @@ export default function DiagramCanvas() {
   const handleMouseMove = (e: React.MouseEvent) => {
     if (resizing) {
       e.preventDefault()
-      const dx = e.clientX - resizing.startX
-      const dy = e.clientY - resizing.startY
+      const p = getPoint(e)
+      const dx = p.x - resizing.startX
+      const dy = p.y - resizing.startY
       updateShape(resizing.id, {
         width: Math.max(20, resizing.startW + dx),
         height: Math.max(20, resizing.startH + dy)
       })
     } else if (dragging) {
       e.preventDefault()
-      updateShape(dragging.id, { x: e.clientX - dragging.offsetX, y: e.clientY - dragging.offsetY })
+      const p = getPoint(e)
+      updateShape(dragging.id, { x: p.x - dragging.offsetX, y: p.y - dragging.offsetY })
     }
   }
 
@@ -127,16 +188,40 @@ export default function DiagramCanvas() {
     setSelectedId(null)
   }
 
+  const handleWheel = (e: React.WheelEvent) => {
+    if (e.ctrlKey) {
+      e.preventDefault()
+      const delta = -e.deltaY * 0.001
+      setScale(s => Math.min(4, Math.max(0.2, s + delta)))
+    }
+  }
+
   return (
-    <div
-      ref={containerRef}
-      onContextMenu={handleCanvasContextMenu}
-      onClick={handleCanvasClick}
-      onMouseMove={handleMouseMove}
-      onMouseUp={handleMouseUp}
-      className="relative w-full h-screen bg-neutral-100 select-none"
-    >
-      <svg className="absolute inset-0 pointer-events-none">
+    <div>
+      <div className="p-2 flex gap-2 text-sm">
+        <label>Grid <input className="border p-1 w-16" type="number" value={gridSize} onChange={e => setGridSize(parseInt(e.target.value) || 1)} /></label>
+        <label>Year <input className="border p-1 w-20" type="number" value={year} onChange={e => setYear(parseInt(e.target.value) || year)} /></label>
+        <label>Month <input className="border p-1 w-14" type="number" value={month} onChange={e => setMonth(parseInt(e.target.value) || month)} /></label>
+        <label>View <select className="border p-1" value={view} onChange={e => setView(e.target.value as 'year'|'month'|'week')}> <option value="year">Year</option> <option value="month">Month</option> <option value="week">Week</option> </select></label>
+        {view==='week' && (<input className="border p-1 w-14" type="number" value={week} onChange={e => setWeek(parseInt(e.target.value) || week)} />)}
+      </div>
+      <div
+        ref={containerRef}
+        onContextMenu={handleCanvasContextMenu}
+        onClick={handleCanvasClick}
+        onMouseMove={handleMouseMove}
+        onMouseUp={handleMouseUp}
+        onWheel={handleWheel}
+        className="relative w-full h-screen overflow-auto select-none bg-neutral-100"
+        style={{
+          transform: `scale(${scale})`,
+          transformOrigin: '0 0',
+          backgroundImage: `linear-gradient(to right, #e5e5e5 1px, transparent 1px), linear-gradient(to bottom, #e5e5e5 1px, transparent 1px)`,
+          backgroundSize: `${gridSize}px ${gridSize}px`
+        }}
+      >
+        {scheduleLines()}
+        <svg className="absolute inset-0 pointer-events-none">
         {lines.map(line => {
           const from = shapes.find(s => s.id===line.from)
           const to = shapes.find(s => s.id===line.to)
@@ -253,6 +338,7 @@ export default function DiagramCanvas() {
           <div className="p-1 hover:bg-neutral-200 cursor-pointer" onClick={() => startConnect(shapeMenu.id, 'dashed')}>Connect Dashed</div>
         </div>
       )}
+      </div>
     </div>
   )
 }
