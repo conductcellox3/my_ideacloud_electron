@@ -44,3 +44,9 @@ The right-click menu on the canvas lets you insert several flowchart shapes:
 - Diamond (decision)
 - Parallelogram (input/output)
 - Sticky note
+
+## Calendar Background
+
+Choosing **Calendar** in the background selector shows a month-style calendar
+with weeks arranged vertically. The toolbar provides inputs for **Day Spacing**
+and **Week Spacing** so you can control the size of each cell.

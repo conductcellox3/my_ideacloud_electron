@@ -35,6 +35,8 @@ export default function DiagramCanvas() {
   const [calendarYear, setCalendarYear] = useState(new Date().getFullYear())
   const [calendarMonth, setCalendarMonth] = useState(new Date().getMonth() + 1)
   const [calendarSpan, setCalendarSpan] = useState(1)
+  const [daySpacing, setDaySpacing] = useState(100)
+  const [weekSpacing, setWeekSpacing] = useState(80)
 
   const escapeXml = (text: string) =>
     text.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
@@ -95,29 +97,54 @@ export default function DiagramCanvas() {
 
   const backgroundElements = () => {
     if (background === 'calendar') {
-      const width = 200
       const items: JSX.Element[] = []
-      let x = 0
+      const dayNames = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat']
       let y = calendarYear
       let m = calendarMonth
+      let top = 0
       for (let i = 0; i < calendarSpan; i++) {
+        const firstDay = new Date(y, m - 1, 1).getDay()
         const days = new Date(y, m, 0).getDate()
+        const weeks = Math.ceil((days + firstDay) / 7)
+        const monthKey = `${y}-${m}`
         items.push(
-          <div key={`label-${y}-${m}`} style={{position:'absolute', left:x + 4, top:0, fontSize:12, color:'#555'}}>{`${y}/${m}`}</div>
+          <div key={`label-${monthKey}`} style={{position:'absolute', left:0, top:top, fontSize:12, color:'#555'}}>{`${y}/${m}`}</div>
         )
-        for (let d = 0; d < days; d++) {
-          const px = x + d * width
+        dayNames.forEach((name, idx) => {
           items.push(
-            <div key={`l${y}-${m}-${d}`} style={{position:'absolute', left:px, top:0, bottom:0, width:1, background:'#ccc'}} />
+            <div
+              key={`h-${monthKey}-${idx}`}
+              style={{position:'absolute', left:idx * daySpacing + 4, top:top + 16, fontSize:12, color:'#555'}}
+            >
+              {name}
+            </div>
           )
+        })
+        for (let d = 1; d <= days; d++) {
+          const dow = new Date(y, m - 1, d).getDay()
+          const week = Math.floor((d + firstDay - 1) / 7)
+          const left = dow * daySpacing
+          const cellTop = top + 32 + week * weekSpacing
           items.push(
-            <div key={`t${y}-${m}-${d}`} style={{position:'absolute', left:px + 4, top:16, fontSize:12, color:'#555'}}>{d + 1}</div>
+            <div
+              key={`c-${monthKey}-${d}`}
+              style={{
+                position: 'absolute',
+                left,
+                top: cellTop,
+                width: daySpacing,
+                height: weekSpacing,
+                border: '1px solid #ccc',
+                boxSizing: 'border-box',
+                fontSize: 12,
+                padding: 2,
+              }}
+            >
+              {d}
+            </div>
           )
         }
-        x += days * width
-        items.push(
-          <div key={`end-${y}-${m}`} style={{position:'absolute', left:x, top:0, bottom:0, width:2, background:'#888'}} />
-        )
+        top += 32 + weeks * weekSpacing + weekSpacing
         m++
         if (m > 12) { m = 1; y++ }
       }
@@ -265,6 +292,8 @@ export default function DiagramCanvas() {
             <label>Year <input className="border p-1 w-20" type="number" value={calendarYear} onChange={e => setCalendarYear(parseInt(e.target.value) || calendarYear)} /></label>
             <label>Month <input className="border p-1 w-14" type="number" value={calendarMonth} onChange={e => setCalendarMonth(parseInt(e.target.value) || calendarMonth)} /></label>
             <label>Months <input className="border p-1 w-14" type="number" min={1} max={3} value={calendarSpan} onChange={e => setCalendarSpan(Math.min(3, Math.max(1, parseInt(e.target.value) || 1)))} /></label>
+            <label>Day Spacing <input className="border p-1 w-14" type="number" value={daySpacing} onChange={e => setDaySpacing(parseInt(e.target.value) || 1)} /></label>
+            <label>Week Spacing <input className="border p-1 w-14" type="number" value={weekSpacing} onChange={e => setWeekSpacing(parseInt(e.target.value) || 1)} /></label>
           </>
         )}
         <button className="border px-2" onClick={openDiagram}>Open</button>
