@@ -31,10 +31,10 @@ export default function DiagramCanvas() {
   const containerRef = useRef<HTMLDivElement>(null)
   const [gridSize, setGridSize] = useState(50)
   const [scale, setScale] = useState(1)
-  const [view, setView] = useState<'year'|'month'|'week'>('year')
-  const [year, setYear] = useState(new Date().getFullYear())
-  const [month, setMonth] = useState(new Date().getMonth()+1)
-  const [week, setWeek] = useState(1)
+  const [background, setBackground] = useState<'grid' | 'calendar' | 'swot'>('grid')
+  const [calendarYear, setCalendarYear] = useState(new Date().getFullYear())
+  const [calendarMonth, setCalendarMonth] = useState(new Date().getMonth() + 1)
+  const [calendarSpan, setCalendarSpan] = useState(1)
 
   const escapeXml = (text: string) =>
     text.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
@@ -93,44 +93,47 @@ export default function DiagramCanvas() {
     }
   }
 
-  const scheduleLines = () => {
-    const width = 200
-    const items: JSX.Element[] = []
-    if (view === 'year') {
-      for (let i = 0; i < 12; i++) {
-        const x = i * width
+  const backgroundElements = () => {
+    if (background === 'calendar') {
+      const width = 200
+      const items: JSX.Element[] = []
+      let x = 0
+      let y = calendarYear
+      let m = calendarMonth
+      for (let i = 0; i < calendarSpan; i++) {
+        const days = new Date(y, m, 0).getDate()
         items.push(
-          <div key={`l${i}`} style={{position:'absolute', left:x, top:0, bottom:0, width:1, background:'#ccc'}} />
+          <div key={`label-${y}-${m}`} style={{position:'absolute', left:x + 4, top:0, fontSize:12, color:'#555'}}>{`${y}/${m}`}</div>
         )
+        for (let d = 0; d < days; d++) {
+          const px = x + d * width
+          items.push(
+            <div key={`l${y}-${m}-${d}`} style={{position:'absolute', left:px, top:0, bottom:0, width:1, background:'#ccc'}} />
+          )
+          items.push(
+            <div key={`t${y}-${m}-${d}`} style={{position:'absolute', left:px + 4, top:16, fontSize:12, color:'#555'}}>{d + 1}</div>
+          )
+        }
+        x += days * width
         items.push(
-          <div key={`t${i}`} style={{position:'absolute', left:x + 4, top:0, fontSize:12, color:'#555'}}>{i+1}月</div>
+          <div key={`end-${y}-${m}`} style={{position:'absolute', left:x, top:0, bottom:0, width:2, background:'#888'}} />
         )
+        m++
+        if (m > 12) { m = 1; y++ }
       }
-    } else if (view === 'month') {
-      const days = new Date(year, month, 0).getDate()
-      for (let i = 0; i < days; i++) {
-        const x = i * width
-        items.push(
-          <div key={`l${i}`} style={{position:'absolute', left:x, top:0, bottom:0, width:1, background:'#ccc'}} />
-        )
-        items.push(
-          <div key={`t${i}`} style={{position:'absolute', left:x + 4, top:0, fontSize:12, color:'#555'}}>{i+1}日</div>
-        )
-      }
-    } else if (view === 'week') {
-      for (let i = 0; i < 7; i++) {
-        const x = i * width
-        const date = new Date(year, month - 1, (week - 1) * 7 + i + 1)
-        const label = `${date.getMonth()+1}/${date.getDate()}`
-        items.push(
-          <div key={`l${i}`} style={{position:'absolute', left:x, top:0, bottom:0, width:1, background:'#ccc'}} />
-        )
-        items.push(
-          <div key={`t${i}`} style={{position:'absolute', left:x + 4, top:0, fontSize:12, color:'#555'}}>{label}</div>
-        )
-      }
+      return items
     }
-    return items
+    if (background === 'swot') {
+      return [
+        <div key="v" style={{position:'absolute', left:'50%', top:0, bottom:0, width:1, background:'#ccc'}} />,
+        <div key="h" style={{position:'absolute', top:'50%', left:0, right:0, height:1, background:'#ccc'}} />,
+        <div key="s" style={{position:'absolute', left:'25%', top:'25%', transform:'translate(-50%,-50%)', fontSize:16, fontWeight:'bold', color:'#555'}}>Strengths</div>,
+        <div key="w" style={{position:'absolute', left:'75%', top:'25%', transform:'translate(-50%,-50%)', fontSize:16, fontWeight:'bold', color:'#555'}}>Weaknesses</div>,
+        <div key="o" style={{position:'absolute', left:'25%', top:'75%', transform:'translate(-50%,-50%)', fontSize:16, fontWeight:'bold', color:'#555'}}>Opportunities</div>,
+        <div key="t" style={{position:'absolute', left:'75%', top:'75%', transform:'translate(-50%,-50%)', fontSize:16, fontWeight:'bold', color:'#555'}}>Threats</div>,
+      ]
+    }
+    return null
   }
 
   const addShape = (
@@ -247,11 +250,23 @@ export default function DiagramCanvas() {
   return (
     <div>
       <div className="p-2 flex gap-2 text-sm">
-        <label>Grid <input className="border p-1 w-16" type="number" value={gridSize} onChange={e => setGridSize(parseInt(e.target.value) || 1)} /></label>
-        <label>Year <input className="border p-1 w-20" type="number" value={year} onChange={e => setYear(parseInt(e.target.value) || year)} /></label>
-        <label>Month <input className="border p-1 w-14" type="number" value={month} onChange={e => setMonth(parseInt(e.target.value) || month)} /></label>
-        <label>View <select className="border p-1" value={view} onChange={e => setView(e.target.value as 'year'|'month'|'week')}> <option value="year">Year</option> <option value="month">Month</option> <option value="week">Week</option> </select></label>
-        {view==='week' && (<input className="border p-1 w-14" type="number" value={week} onChange={e => setWeek(parseInt(e.target.value) || week)} />)}
+        <label>Background
+          <select className="border p-1" value={background} onChange={e => setBackground(e.target.value as 'grid'|'calendar'|'swot')}>
+            <option value="grid">Grid</option>
+            <option value="calendar">Calendar</option>
+            <option value="swot">SWOT</option>
+          </select>
+        </label>
+        {background === 'grid' && (
+          <label>Grid <input className="border p-1 w-16" type="number" value={gridSize} onChange={e => setGridSize(parseInt(e.target.value) || 1)} /></label>
+        )}
+        {background === 'calendar' && (
+          <>
+            <label>Year <input className="border p-1 w-20" type="number" value={calendarYear} onChange={e => setCalendarYear(parseInt(e.target.value) || calendarYear)} /></label>
+            <label>Month <input className="border p-1 w-14" type="number" value={calendarMonth} onChange={e => setCalendarMonth(parseInt(e.target.value) || calendarMonth)} /></label>
+            <label>Months <input className="border p-1 w-14" type="number" min={1} max={3} value={calendarSpan} onChange={e => setCalendarSpan(Math.min(3, Math.max(1, parseInt(e.target.value) || 1)))} /></label>
+          </>
+        )}
         <button className="border px-2" onClick={openDiagram}>Open</button>
         <button className="border px-2" onClick={saveDiagram}>Save</button>
       </div>
@@ -266,11 +281,13 @@ export default function DiagramCanvas() {
         style={{
           transform: `scale(${scale})`,
           transformOrigin: '0 0',
-          backgroundImage: `linear-gradient(to right, #e5e5e5 1px, transparent 1px), linear-gradient(to bottom, #e5e5e5 1px, transparent 1px)`,
+          backgroundImage: background === 'grid'
+            ? `linear-gradient(to right, #e5e5e5 1px, transparent 1px), linear-gradient(to bottom, #e5e5e5 1px, transparent 1px)`
+            : undefined,
           backgroundSize: `${gridSize}px ${gridSize}px`
         }}
       >
-        {scheduleLines()}
+        {backgroundElements()}
         <svg className="absolute inset-0 pointer-events-none">
         {lines.map(line => {
           const from = shapes.find(s => s.id===line.from)
